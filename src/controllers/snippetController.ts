@@ -2,18 +2,23 @@ import { Request, Response } from "express";
 import Snippet from "../models/Snippet";
 
 export const createSnippet = async (req: Request, res: Response) => {
-  const { title, code, language, tags, expiresIn } = req.body;
-  const encodedCode = Buffer.from(code).toString("base64");
+  try {
+    const { title, code, language, tags } = req.body;
+    const encodedCode = Buffer.from(code).toString("base64");
 
-  const snippet = await Snippet.create({
-    title,
-    code: encodedCode,
-    language,
-    tags,
-    expiresAt: expiresIn ? new Date(Date.now() + expiresIn * 1000) : null,
-  });
+    const snippet = new Snippet({
+      title,
+      code: encodedCode,
+      language,
+      tags,
+    });
 
-  res.status(201).json(snippet);
+    await snippet.save();
+    res.status(201).json(snippet);
+  } catch (error) {
+    console.error("❌ Error creating snippet:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
 export const getSnippets = async (req: Request, res: Response) => {
