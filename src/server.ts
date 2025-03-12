@@ -29,28 +29,22 @@ app.set("views", path.join(__dirname, "../views"));
 
 app.use("/api", snippetRoutes);
 
-// Decode Base64 before rendering frontend
 app.get("/", async (_, res) => {
   try {
     const snippets = await Snippet.find().lean();
     console.log("Fetched Snippets:", snippets); // Debugging output
+
     snippets.forEach((snippet) => {
       if (snippet.code) {
         try {
-          const decodedCode = Buffer.from(snippet.code, "base64").toString(
-            "utf-8"
-          );
-          if (/[^\x00-\x7F]/.test(decodedCode)) {
-            // Check for corrupted output
-            throw new Error("Invalid UTF-8 sequence detected");
-          }
-          snippet.code = decodedCode;
+          snippet.code = Buffer.from(snippet.code, "base64").toString("utf-8");
         } catch (error) {
           console.error("Error decoding Base64:", error);
           snippet.code = "Error decoding code";
         }
       }
     });
+
     res.render("index", { snippets });
   } catch (error) {
     console.error("❌ Error fetching snippets:", error);
