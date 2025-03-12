@@ -2,10 +2,15 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
-import path from "path";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
 import snippetRoutes from "./routes/snippetRoutes";
 import Snippet, { ISnippet } from "./models/Snippet";
+
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 mongoose.connect(process.env.MONGODB_URI!);
 
@@ -22,11 +27,9 @@ app.use("/api", snippetRoutes);
 
 app.get("/", async (_, res) => {
   const snippets = (await Snippet.find().lean()) as ISnippet[];
-
   snippets.forEach((snippet: ISnippet) => {
     snippet.code = Buffer.from(snippet.code, "base64").toString("utf-8");
   });
-
   res.render("index", { snippets });
 });
 
