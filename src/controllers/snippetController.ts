@@ -42,17 +42,24 @@ export const getSnippets = async (req: Request, res: Response) => {
   res.json(snippets);
 };
 
-export const getSnippetById = async (req: Request, res: Response) => {
+export const getSnippetById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const snippet = await Snippet.findById(req.params.id);
   if (!snippet || (snippet.expiresAt && snippet.expiresAt < new Date())) {
-    return res.status(404).json({ message: "Snippet not found or expired" });
+    res.status(404).json({ message: "Snippet not found or expired" });
+    return;
   }
 
   snippet.code = Buffer.from(snippet.code, "base64").toString("utf-8");
   res.json(snippet);
 };
 
-export const updateSnippet = async (req: Request, res: Response) => {
+export const updateSnippet = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { title, code, language, tags } = req.body;
 
   const snippet = await Snippet.findByIdAndUpdate(
@@ -61,7 +68,10 @@ export const updateSnippet = async (req: Request, res: Response) => {
     { new: true }
   );
 
-  if (!snippet) return res.status(404).json({ message: "Snippet not found" });
+  if (!snippet) {
+    res.status(404).json({ message: "Snippet not found" });
+    return;
+  }
 
   res.json(snippet);
 };
