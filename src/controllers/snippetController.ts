@@ -1,27 +1,31 @@
 import { Request, Response } from "express";
-import mongoose, { Schema, Document } from "mongoose";
+import Snippet from "../models/Snippet";
 
-export interface Isnippet extends Document {
-  title: string;
-  code: string;
-  language: string;
-  tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+export const createSnippet = async (req: Request, res: Response) => {
+  const { title, code, language, tags, expiresIn } = req.body;
+  const encodedCode = Buffer.from(code).toString("base64");
+  const snippet = await Snippet.create({
+    title,
+    code: encodedCode,
+    language,
+    tags,
+    expiresAt: expiresIn ? new Date(Date.now() + expiresIn * 1000) : null,
+  });
 
-const SnippetSchema: Schema = new Schema(
-  {
-    title: { type: String, required: true },
-    code: { type: String, required: true },
-    language: { type: String, required: true },
-    tags: [String],
-    expiresAt: { type: Date, default: null },
-  },
-  { timestamps: true }
-);
+  res.status(201).json(snippet);
+};
 
-SnippetSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-export const getHelloWorld = (req: Request, res: Response) => {
-  res.status(200).json({ message: "Hello World!" });
+export const getSnippetById = async (req: Request, res: Response) => {
+  const snippet = await Snippet.findById(req.params.id);
+  if (!snippet || (snippet.expiresAt && snippet.expiresAt < new Date())) {
+    return res.status(404).json({ message: "Snippet not found or expired" });
+  }
+
+  snippet.code = Buffer.from(snippet.code, "base64").toString("utf-8");
+  res.json(snippet);
+};
+
+export const deleteSnippet = async (req: Request, res: Response) => {
+  await Snippet.findByIdAndDelete(req.params.id);
+  res.status(204).send();
 };
